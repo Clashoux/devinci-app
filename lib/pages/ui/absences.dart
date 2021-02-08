@@ -11,8 +11,10 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:matomo/matomo.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
-import 'package:easy_localization/easy_localization.dart';
+//import 'package:easy_localization/easy_localization.dart';
+import 'package:get/get.dart';
 import 'package:devinci/pages/logic/absences.dart';
+import 'package:f_logs/f_logs.dart';
 
 class AbsencesPage extends TraceableStatefulWidget {
   AbsencesPage({Key key}) : super(key: key);
@@ -30,22 +32,40 @@ class AbsencesPageState extends State<AbsencesPage> {
         try {
           await getData(force: true);
         } catch (e) {
-          l('needs reconnection');
-          final snackBar = SnackBar(
-            content: Text('reconnecting').tr(),
+          FLog.info(
+              className: 'AbsencesPageState',
+              methodName: 'initState',
+              text: 'needs reconnection');
+          Get.snackbar(
+            null,
+            'reconnecting'.tr,
             duration: const Duration(seconds: 10),
+            snackPosition: SnackPosition.BOTTOM,
+            borderRadius: 0,
+            margin: EdgeInsets.only(
+                left: 8, right: 8, top: 0, bottom: globals.bottomPadding),
           );
-// Find the Scaffold in the widget tree and use it to show a SnackBar.
-          Scaffold.of(getContext()).showSnackBar(snackBar);
           try {
             await globals.user.getTokens();
           } catch (e, stacktrace) {
-            l(e);
-            l(stacktrace);
+            FLog.logThis(
+                className: 'AbsencesPage ui',
+                methodName: 'initState',
+                text: 'exception',
+                type: LogLevel.ERROR,
+                exception: Exception(e),
+                stacktrace: stacktrace);
           }
           try {
             await getData(force: true);
           } catch (exception, stacktrace) {
+            FLog.logThis(
+                className: 'AbsencesPage ui',
+                methodName: 'initState',
+                text: 'exception',
+                type: LogLevel.ERROR,
+                exception: Exception(e),
+                stacktrace: stacktrace);
             var client = HttpClient();
             var req = await client.getUrl(
               Uri.parse('https://www.leonard-de-vinci.net/?my=abs'),
@@ -61,13 +81,9 @@ class AbsencesPageState extends State<AbsencesPage> {
             var res = await req.close();
             globals.feedbackNotes = await res.transform(utf8.decoder).join();
 
-            await reportError(
-                'absences.dart | _AbsencesPageState | runBeforeBuild() | user.getAbsences() => $exception',
-                stacktrace);
+            await reportError(exception, stacktrace);
           }
-          Scaffold.of(getContext()).removeCurrentSnackBar();
-
-          l(globals.user.tokens);
+          Get.back();
         }
         globals.isLoading.setState(2, false);
       }
@@ -89,7 +105,7 @@ class AbsencesPageState extends State<AbsencesPage> {
               Icon(Icons.wifi_off_rounded, size: 32),
               Padding(
                 padding: const EdgeInsets.only(top: 8),
-                child: Text('offline').tr(),
+                child: Text('offline'.tr),
               ),
             ],
           ),
@@ -130,11 +146,11 @@ class AbsencesPageState extends State<AbsencesPage> {
                               children: <Widget>[
                                 SemestreSelection(
                                     's1',
-                                    'nabsence'
+                                    'absence'
                                         .plural(globals.user.absences['s1'])),
                                 SemestreSelection(
                                     's2',
-                                    'nabsence'
+                                    'absence'
                                         .plural(globals.user.absences['s2'])),
                               ],
                             )),
@@ -182,10 +198,10 @@ class AbsencesPageState extends State<AbsencesPage> {
                       Padding(
                         padding: EdgeInsets.only(top: 28),
                         child: Text(
-                          'no_absence',
+                          'no_absence'.tr,
                           style: TextStyle(
                               fontWeight: FontWeight.w400, fontSize: 20),
-                        ).tr(),
+                        ),
                       ),
                     ],
                   ),

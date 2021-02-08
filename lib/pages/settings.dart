@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:about/about.dart';
-import 'package:app_settings/app_settings.dart';
 import 'package:devinci/extra/CommonWidgets.dart';
 import 'package:devinci/libraries/devinci/extra/functions.dart';
 import 'package:flutter/cupertino.dart';
@@ -14,11 +13,15 @@ import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:flutter_statusbarcolor/flutter_statusbarcolor.dart';
 import 'package:matomo/matomo.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
+import 'package:path_provider/path_provider.dart';
 
 import 'package:package_info/package_info.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:in_app_review/in_app_review.dart';
-import 'package:easy_localization/easy_localization.dart';
+//import 'package:easy_localization/easy_localization.dart';
+import 'package:get/get.dart';
+import 'package:f_logs/f_logs.dart';
 
 // ignore: must_be_immutable
 class SettingsPage extends TraceableStatefulWidget {
@@ -71,9 +74,9 @@ class _SettingsPageState extends State<SettingsPage> {
           title: Padding(
             padding: EdgeInsets.only(top: 30, bottom: 28),
             child: Text(
-              'settings',
+              'settings'.tr,
               style: Theme.of(context).textTheme.headline1,
-            ).tr(),
+            ),
           ),
         ),
         body: SafeArea(
@@ -166,7 +169,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   right: 16,
                   top: 16,
                 ),
-                height: (7 * 46).toDouble(),
+                height: (6 * 46).toDouble(),
                 decoration: BoxDecoration(
                     color: Theme.of(context).cardColor,
                     shape: BoxShape.rectangle,
@@ -188,9 +191,9 @@ class _SettingsPageState extends State<SettingsPage> {
                         children: <Widget>[
                           Expanded(
                             child: Text(
-                              'offline',
+                              'offline'.tr,
                               style: Theme.of(context).textTheme.subtitle1,
-                            ).tr(),
+                            ),
                           ),
                           Padding(
                             padding: EdgeInsets.only(right: 8),
@@ -221,9 +224,9 @@ class _SettingsPageState extends State<SettingsPage> {
                         children: <Widget>[
                           Expanded(
                             child: Text(
-                              'theme',
+                              'theme'.tr,
                               style: Theme.of(context).textTheme.subtitle1,
-                            ).tr(),
+                            ),
                           ),
                           Padding(
                             padding: EdgeInsets.only(right: 9),
@@ -261,43 +264,13 @@ class _SettingsPageState extends State<SettingsPage> {
                                 ].map<DropdownMenuItem<String>>((String value) {
                                   return DropdownMenuItem<String>(
                                     value: value,
-                                    child: Text(value).tr(),
+                                    child: Text(value.tr),
                                   );
                                 }).toList(),
                               ),
                             ),
                           ),
                         ],
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () async {
-                        await AppSettings.openAppSettings();
-                      }, // handle your onTap here
-                      child: Container(
-                        height: 46,
-                        margin: EdgeInsets.only(left: 24),
-                        decoration: BoxDecoration(
-                            border: Border(
-                                bottom: BorderSide(
-                          width: 0.2,
-                          color: Color(0xffACACAC),
-                        ))),
-                        child: Row(
-                          children: <Widget>[
-                            Expanded(
-                              child: Text(
-                                'notif_settings',
-                                style: Theme.of(context).textTheme.subtitle1,
-                              ).tr(),
-                            ),
-                            Padding(
-                              padding: EdgeInsets.only(right: 8),
-                              child: Icon(Icons.navigate_next,
-                                  color: Color(0xffACACAC)),
-                            ),
-                          ],
-                        ),
                       ),
                     ),
                     Container(
@@ -313,9 +286,9 @@ class _SettingsPageState extends State<SettingsPage> {
                         children: <Widget>[
                           Expanded(
                             child: Text(
-                              'attendance_notif',
+                              'attendance_notif'.tr,
                               style: Theme.of(context).textTheme.subtitle1,
-                            ).tr(),
+                            ),
                           ),
                           Padding(
                             padding: EdgeInsets.only(right: 8),
@@ -353,9 +326,9 @@ class _SettingsPageState extends State<SettingsPage> {
                         children: <Widget>[
                           Expanded(
                             child: Text(
-                              'error_report',
+                              'error_report'.tr,
                               style: Theme.of(context).textTheme.subtitle1,
-                            ).tr(),
+                            ),
                           ),
                           Padding(
                             padding: EdgeInsets.only(right: 8),
@@ -392,9 +365,9 @@ class _SettingsPageState extends State<SettingsPage> {
                         children: <Widget>[
                           Expanded(
                             child: Text(
-                              'usage_monitoring',
+                              'usage_monitoring'.tr,
                               style: Theme.of(context).textTheme.subtitle1,
-                            ).tr(),
+                            ),
                           ),
                           Padding(
                             padding: EdgeInsets.only(right: 8),
@@ -431,12 +404,11 @@ class _SettingsPageState extends State<SettingsPage> {
                         child: Row(
                           children: <Widget>[
                             Expanded(
-                              child: Text('logout',
-                                      style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.redAccent.shade200))
-                                  .tr(),
+                              child: Text('logout'.tr,
+                                  style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.redAccent.shade200)),
                             ),
                             Padding(
                               padding: EdgeInsets.only(right: 8),
@@ -453,12 +425,9 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
               ),
               Container(
-                margin: EdgeInsets.only(
-                  left: 16,
-                  right: 16,
-                  top: 28,
-                ),
-                height: (7 * 46).toDouble(),
+                margin:
+                    EdgeInsets.only(left: 16, right: 16, top: 28, bottom: 28),
+                height: (8 * 46).toDouble(),
                 decoration: BoxDecoration(
                     color: Theme.of(context).cardColor,
                     shape: BoxShape.rectangle,
@@ -497,9 +466,9 @@ class _SettingsPageState extends State<SettingsPage> {
                         children: <Widget>[
                           Expanded(
                             child: Text(
-                              'write_comment',
+                              'write_comment'.tr,
                               style: Theme.of(context).textTheme.subtitle1,
-                            ).tr(),
+                            ),
                           ),
                           Padding(
                             padding: EdgeInsets.only(right: 8),
@@ -513,7 +482,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   GestureDetector(
                     onTap: () async {
                       await showAboutPage(
-                        title: Text('about').tr(),
+                        title: Text('about'.tr),
                         context: context,
                         applicationVersion:
                             'Version {{ version }}, build #{{ buildNumber }}',
@@ -525,31 +494,31 @@ class _SettingsPageState extends State<SettingsPage> {
                               padding: const EdgeInsets.all(0),
                               styleSheet: MarkdownStyleSheet(
                                   p: Theme.of(context).textTheme.bodyText2),
-                              data: 'app_description'.tr()),
+                              data: 'app_description'.tr),
                         ),
                         children: <Widget>[
                           MarkdownPageListTile(
                             filename: 'assets/LICENSE',
-                            title: Text('see_license').tr(),
+                            title: Text('see_license'.tr),
                             icon: Icon(Icons.description_outlined),
                           ),
                           MarkdownPageListTile(
                             filename: 'assets/CONTRIBUTING.md',
-                            title: Text('contribution_guide').tr(),
+                            title: Text('contribution_guide'.tr),
                             icon: Icon(Icons.share_outlined),
                           ),
                           LicensesPageListTile(
-                            title: Text('open_source_licenses').tr(),
+                            title: Text('open_source_licenses'.tr),
                             icon: Icon(Icons.favorite_outlined),
                           ),
                           MarkdownPageListTile(
                             filename: 'assets/tos.md',
-                            title: Text('TOS_full').tr(),
+                            title: Text('TOS_full'.tr),
                             icon: Icon(Icons.gavel_outlined),
                           ),
                           MarkdownPageListTile(
                             filename: 'assets/privacy.md',
-                            title: Text('PP').tr(),
+                            title: Text('PP'.tr),
                             icon: Icon(Icons.security_outlined),
                           ),
                         ],
@@ -581,9 +550,9 @@ class _SettingsPageState extends State<SettingsPage> {
                         children: <Widget>[
                           Expanded(
                             child: Text(
-                              'about',
+                              'about'.tr,
                               style: Theme.of(context).textTheme.subtitle1,
-                            ).tr(),
+                            ),
                           ),
                           Padding(
                             padding: EdgeInsets.only(right: 8),
@@ -616,9 +585,9 @@ class _SettingsPageState extends State<SettingsPage> {
                         children: <Widget>[
                           Expanded(
                             child: Text(
-                              'join_discord',
+                              'join_discord'.tr,
                               style: Theme.of(context).textTheme.subtitle1,
-                            ).tr(),
+                            ),
                           ),
                           Padding(
                             padding: EdgeInsets.only(right: 8),
@@ -654,9 +623,49 @@ class _SettingsPageState extends State<SettingsPage> {
                         children: <Widget>[
                           Expanded(
                             child: Text(
-                              'support',
+                              'support'.tr,
                               style: Theme.of(context).textTheme.subtitle1,
-                            ).tr(),
+                            ),
+                          ),
+                          Padding(
+                            padding: EdgeInsets.only(right: 8),
+                            child: Icon(Icons.navigate_next,
+                                color: Color(0xffACACAC)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () async {
+                      await Sentry.captureMessage('Devinci logs sent');
+                      File logs = await FLog.exportLogs();
+                      final email = Email(
+                        body: '',
+                        subject: 'Devinci - Logs',
+                        recipients: ['devinci@araulin.eu'],
+                        attachmentPaths: [logs.path],
+                        isHTML: false,
+                      );
+
+                      await FlutterEmailSender.send(email);
+                    }, // handle your onTap here
+                    child: Container(
+                      height: 46,
+                      margin: EdgeInsets.only(left: 24),
+                      decoration: BoxDecoration(
+                          border: Border(
+                              bottom: BorderSide(
+                        width: 0.2,
+                        color: Color(0xffACACAC),
+                      ))),
+                      child: Row(
+                        children: <Widget>[
+                          Expanded(
+                            child: Text(
+                              'dump_logs'.tr,
+                              style: Theme.of(context).textTheme.subtitle1,
+                            ),
                           ),
                           Padding(
                             padding: EdgeInsets.only(right: 8),
@@ -675,11 +684,11 @@ class _SettingsPageState extends State<SettingsPage> {
                     child: Row(
                       children: <Widget>[
                         Expanded(
-                          child: Text('footer',
+                          child: Text('footer'.tr,
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w300,
-                              )).tr(),
+                              )),
                         ),
                       ],
                     ),
@@ -777,15 +786,26 @@ class _IdComponentState extends State<IdComponent> {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () async {
-        var snackBar;
         if (id == '401') {
-          // error while retrieving the playerId
-          snackBar = SnackBar(content: Text('error_playerid').tr());
+          Get.snackbar(
+            null,
+            'error_playerid'.tr,
+            duration: const Duration(seconds: 6),
+            snackPosition: SnackPosition.BOTTOM,
+            borderRadius: 0,
+            margin: EdgeInsets.all(0),
+          );
         } else {
           await Clipboard.setData(ClipboardData(text: id));
-          snackBar = SnackBar(content: Text('copied').tr(args: [id]));
+          Get.snackbar(
+            null,
+            'copied'.trArgs([id]),
+            duration: const Duration(seconds: 6),
+            snackPosition: SnackPosition.BOTTOM,
+            borderRadius: 0,
+            margin: EdgeInsets.all(0),
+          );
         }
-        Scaffold.of(context).showSnackBar(snackBar);
       }, // handle your onTap here
       child: Container(
         height: 46,
@@ -799,11 +819,11 @@ class _IdComponentState extends State<IdComponent> {
         child: Row(
           children: <Widget>[
             Expanded(
-              child: Text('copy_player_id',
+              child: Text('copy_player_id'.tr,
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w300,
-                  )).tr(),
+                  )),
             ),
           ],
         ),

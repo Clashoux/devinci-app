@@ -7,8 +7,10 @@ import 'package:devinci/libraries/devinci/extra/functions.dart';
 import 'package:devinci/libraries/flutter_progress_button/flutter_progress_button.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:easy_localization/easy_localization.dart';
+import 'package:get/get.dart';
+//import 'package:easy_localization/easy_localization.dart';
 import 'package:devinci/extra/globals.dart' as globals;
+import 'package:f_logs/f_logs.dart';
 
 import '../mainPage.dart';
 
@@ -27,11 +29,11 @@ bool show = false;
 String validator(String value) {
   if (globals.user != null) {
     if (globals.user.error) {
-      return 'wrong_id'.tr();
+      return 'wrong_id'.tr;
     }
   }
   if (value.isEmpty) {
-    return 'no_empty'.tr();
+    return 'no_empty'.tr;
   }
   return null;
 }
@@ -47,7 +49,8 @@ void submit([String value]) async {
       globals.user.error = false;
     }
     if (formKey.currentState.validate()) {
-      l('valid');
+      FLog.info(
+          className: 'LoginPage Logic', methodName: 'submit', text: 'valid');
       setState(() {
         buttonState = ButtonState.inProgress;
       });
@@ -56,7 +59,7 @@ void submit([String value]) async {
               '@edu.devinci.fr',
           myControllerPassword.text);
       try {
-        await globals.user.init(getContext());
+        await globals.user.init();
 
         await Navigator.push(
           getContext(),
@@ -65,7 +68,13 @@ void submit([String value]) async {
           ),
         );
       } catch (exception, stacktrace) {
-        l(exception);
+        FLog.logThis(
+            className: 'LoginPage logic',
+            methodName: 'submit',
+            text: 'exception',
+            type: LogLevel.ERROR,
+            exception: Exception(exception),
+            stacktrace: stacktrace);
         setState(() {
           buttonState = ButtonState.error;
         });
@@ -79,25 +88,19 @@ void submit([String value]) async {
           //credentials are wrong
           myControllerPassword.text = '';
         } else {
-          await reportError(
-              'main.dart | _LoginPageState | runBeforeBuild() | user.init() | else => $exception',
-              stacktrace);
+          await reportError(exception, stacktrace);
 
           await showDialog(
             context: getContext(),
             builder: (BuildContext context) {
               // return object of type Dialog
               return AlertDialog(
-                title: Text('error').tr(),
-                content: Text(
-                  'unknown_error'.tr(namedArgs: {
-                    'code': globals.user.code.toString(),
-                    'exception': exception
-                  }),
-                ),
+                title: Text('error'.tr),
+                content: Text('unknown_error'
+                    .trArgs([globals.user.code.toString(), exception])),
                 actions: <Widget>[
                   TextButton(
-                    child: Text('close').tr(),
+                    child: Text('close'.tr),
                     onPressed: () {
                       Navigator.of(context).pop();
                     },
@@ -111,7 +114,8 @@ void submit([String value]) async {
         formKey.currentState.validate();
       }
     } else {
-      l('invalid');
+      FLog.info(
+          className: 'LoginPage Logic', methodName: 'submit', text: 'invalid');
       setState(() {
         buttonState = ButtonState.error;
       });
@@ -122,7 +126,8 @@ void submit([String value]) async {
               }));
     }
   } else {
-    l('invalid');
+    FLog.info(
+        className: 'LoginPage Logic', methodName: 'submit', text: 'invalid');
     setState(() {
       buttonState = ButtonState.error;
     });
@@ -141,12 +146,23 @@ void runBeforeBuild() async {
 
   var connectivityResult = await (Connectivity().checkConnectivity());
   if (!globals.isConnected) {
-    l('shortcut set offline');
+    FLog.info(
+        className: 'LoginPage Logic',
+        methodName: 'runBeforeBuild',
+        text: 'shortcut set offline');
   } else {
     globals.isConnected = globals.prefs.getBool('isConnected') ?? true;
-    if (!globals.isConnected) l('prefs set offline');
+    if (!globals.isConnected) {
+      FLog.info(
+          className: 'LoginPage Logic',
+          methodName: 'runBeforeBuild',
+          text: 'prefs set offline');
+    }
     if (globals.isConnected) {
-      l('no pref nor shortcut set to offline');
+      FLog.info(
+          className: 'LoginPage Logic',
+          methodName: 'runBeforeBuild',
+          text: 'no pref nor shortcut set to offline');
       globals.isConnected = connectivityResult != ConnectivityResult.none;
     }
   }
@@ -154,40 +170,45 @@ void runBeforeBuild() async {
   password = await globals.storage.read(key: 'password');
 
   if (username != null && password != null) {
-    l('credentials_exists');
+    FLog.info(
+        className: 'LoginPage Logic',
+        methodName: 'runBeforeBuild',
+        text: 'credentials_exists');
     globals.user = Student(username, password);
     try {
-      await globals.user.init(getContext());
+      await globals.user.init();
     } catch (exception, stacktrace) {
       setState(() {
         show = true;
       });
 
-      l(exception.toString());
+      FLog.logThis(
+          className: 'LoginPage logic',
+          methodName: 'runBeforeBuild',
+          text: 'exception',
+          type: LogLevel.ERROR,
+          exception: Exception(exception),
+          stacktrace: stacktrace);
 
       //user.init() throw error if credentials are wrong or if an error occurred during the process
       if (globals.user.code == 401) {
         //credentials are wrong
         myControllerPassword.text = '';
       } else {
-        await reportError(
-            'main.dart | _LoginPageState | runBeforeBuild() | user.init() | else => $exception',
-            stacktrace);
+        await reportError(exception, stacktrace);
 
         await showDialog(
           context: getContext(),
           builder: (BuildContext context) {
             return AlertDialog(
-              title: Text('error').tr(),
+              title: Text('error'.tr),
               content: Text(
-                'unknown_error'.tr(namedArgs: {
-                  'code': globals.user.code.toString(),
-                  'exception': exception.toString()
-                }),
+                'unknown_error'
+                    .trArgs([globals.user.code.toString(), exception]),
               ),
               actions: <Widget>[
                 TextButton(
-                  child: Text('close').tr(),
+                  child: Text('close'.tr),
                   onPressed: () {
                     Navigator.of(context).pop();
                   },
@@ -224,12 +245,23 @@ void didChangeAppLifecycle(AppLifecycleState state) async {
 
   var connectivityResult = await (Connectivity().checkConnectivity());
   if (!globals.isConnected) {
-    l('shortcut set offline');
+    FLog.info(
+        className: 'LoginPage Logic',
+        methodName: 'didChangeAppLifecycle',
+        text: 'shortcut set offline');
   } else {
     globals.isConnected = globals.prefs.getBool('isConnected') ?? true;
-    if (!globals.isConnected) l('prefs set offline');
+    if (!globals.isConnected) {
+      FLog.info(
+          className: 'LoginPage Logic',
+          methodName: 'didChangeAppLifecycle',
+          text: 'prefs set offline');
+    }
     if (globals.isConnected) {
-      l('no pref nor shortcut set to offline');
+      FLog.info(
+          className: 'LoginPage Logic',
+          methodName: 'didChangeAppLifecycle',
+          text: 'no pref nor shortcut set to offline');
       globals.isConnected = connectivityResult != ConnectivityResult.none;
     }
   }
@@ -237,38 +269,43 @@ void didChangeAppLifecycle(AppLifecycleState state) async {
   password = await globals.storage.read(key: 'password');
 
   if (username != null && password != null) {
-    l('credentials_exists');
+    FLog.info(
+        className: 'LoginPage Logic',
+        methodName: 'didChangeAppLifecycle',
+        text: 'credentials_exists');
     globals.user = Student(username, password);
     try {
-      await globals.user.init(getContext());
+      await globals.user.init();
     } catch (exception, stacktrace) {
       setState(() {
         show = true;
       });
-      l(exception);
+      FLog.logThis(
+          className: 'LoginPage logic',
+          methodName: 'didChangeAppLifecycle',
+          text: 'exception',
+          type: LogLevel.ERROR,
+          exception: Exception(exception),
+          stacktrace: stacktrace);
 
       //user.init() throw error if credentials are wrong or if an error occurred during the process
       if (globals.user.code == 401) {
         //credentials are wrong
         myControllerPassword.text = '';
       } else {
-        await reportError(
-            'main.dart | _LoginPageState | runBeforeBuild() | user.init() | else => $exception',
-            stacktrace);
+        await reportError(exception, stacktrace);
         await showDialog(
           context: getContext(),
           builder: (BuildContext context) {
             return AlertDialog(
-              title: Text('error').tr(),
+              title: Text('error'.tr),
               content: Text(
-                'unknown_error'.tr(namedArgs: {
-                  'code': globals.user.code.toString(),
-                  'exception': exception
-                }),
+                'unknown_error'
+                    .trArgs([globals.user.code.toString(), exception]),
               ),
               actions: <Widget>[
                 TextButton(
-                  child: Text('close').tr(),
+                  child: Text('close'.tr),
                   onPressed: () {
                     Navigator.of(context).pop();
                   },

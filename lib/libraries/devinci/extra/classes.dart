@@ -5,9 +5,9 @@ import 'package:crypto/crypto.dart';
 import 'package:devinci/extra/classes.dart';
 import 'package:devinci/libraries/devinci/extra/functions.dart';
 import 'package:devinci/extra/globals.dart' as globals;
+import 'package:f_logs/f_logs.dart';
 import 'package:flutter/material.dart' as material;
 import 'package:html/parser.dart' show parse;
-import 'package:matomo/matomo.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sembast/sembast.dart';
@@ -15,7 +15,8 @@ import 'package:sembast/sembast_io.dart';
 import 'package:sembast/utils/value_utils.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
-import 'package:easy_localization/easy_localization.dart';
+// import 'package:easy_localization/easy_localization.dart';
+import 'package:get/get.dart';
 import 'package:sentry/sentry.dart';
 
 import 'api.dart';
@@ -205,7 +206,7 @@ class Student {
     },
   };
 
-  Future<void> init(material.BuildContext context) async {
+  Future<void> init() async {
     //fetch notesConfig
     try {
       var client = HttpClient();
@@ -220,9 +221,14 @@ class Student {
         var body = await res.transform(utf8.decoder).join();
         notesConfig = json.decode(body);
       }
-      // ignore: empty_catches
-    } catch (exception) {
-      l(exception.toString());
+    } catch (exception, stacktrace) {
+      FLog.logThis(
+          className: 'Student',
+          methodName: 'init',
+          text: 'error while retrieving notesConfig from GitHub',
+          type: LogLevel.ERROR,
+          exception: Exception(exception),
+          stacktrace: stacktrace);
     }
     //init sembast db
     var directory = await getApplicationDocumentsDirectory();
@@ -241,7 +247,8 @@ class Student {
       notes = [];
       await globals.store.record('notes').put(globals.db, notes);
     }
-    l('h2');
+    FLog.info(className: 'Student', methodName: 'init', text: 'h2');
+    //l('h2');
     this.notes = cloneList(notes);
     //retrieve tokens from secure storage (if they exist)
     tokens['SimpleSAML'] = await globals.storage.read(key: 'SimpleSAML') ??
@@ -252,7 +259,8 @@ class Student {
         await globals.storage.read(key: 'SimpleSAMLAuthToken') ?? '';
 
     //retrieve data from secure storage
-    l('h3');
+    FLog.info(className: 'Student', methodName: 'init', text: 'h3');
+    //l('h3');
     globals.notifConsent = globals.prefs.getBool('notifConsent') ?? false;
     globals.showSidePanel = globals.prefs.getBool('showSidePanel') ?? false;
     globals.crashConsent = globals.prefs.getString('crashConsent') ?? 'true';
@@ -266,23 +274,40 @@ class Student {
     data['idAdmin'] = await globals.storage.read(key: 'idAdmin') ?? '';
     data['ine'] = await globals.storage.read(key: 'ine') ?? '';
     data['edtUrl'] = await globals.storage.read(key: 'edtUrl') ?? '';
-    l('h5');
+    FLog.info(className: 'Student', methodName: 'init', text: 'h5');
+    //l('h5');
     if (data['edtUrl'] != '') {
       await setICal(data['edtUrl']);
     }
     data['name'] = await globals.storage.read(key: 'name') ?? '';
     if (globals.isConnected) {
       try {
-        l('test tokens');
+        FLog.info(
+            className: 'Student', methodName: 'init', text: 'test tokens');
+        //l('test tokens');
         await testTokens().timeout(Duration(seconds: 8), onTimeout: () {
           globals.isConnected = false;
-        }).catchError((exception) async {
-          l('test tokens exception : $exception');
+        }).catchError((exception, stacktrace) async {
+          FLog.logThis(
+              className: 'Student',
+              methodName: 'init',
+              text: 'test tokens exception',
+              type: LogLevel.ERROR,
+              exception: Exception(exception),
+              stacktrace: stacktrace);
+          //l('test tokens exception : $exception');
           //testTokens throw an exception if tokens don't exist or if they aren't valid
           //as the tokens don't exist yet or aren't valid, we shall retrieve them from devinci's server
           try {
             await getTokens();
-          } catch (exception) {
+          } catch (exception, stacktrace) {
+            FLog.logThis(
+                className: 'Student',
+                methodName: 'init',
+                text: 'get tokens exception',
+                type: LogLevel.ERROR,
+                exception: Exception(exception),
+                stacktrace: stacktrace);
             //getTokens throw an exception if an error occurs during the retrieving or if credentials are wrong
             if (code == 500) {
               //the exception was thrown by a dart process, which meens that credentials may be good, but the function had trouble to access the server.
@@ -298,14 +323,28 @@ class Student {
             }
           }
         }); //test if tokens exist and if so, test if they are still valid
-      } catch (exception) {
-        l('test tokens exception : $exception');
+      } catch (exception, stacktrace) {
+        FLog.logThis(
+            className: 'Student',
+            methodName: 'init',
+            text: 'test tokens exception',
+            type: LogLevel.ERROR,
+            exception: Exception(exception),
+            stacktrace: stacktrace);
+        //l('test tokens exception : $exception');
 
         //testTokens throw an exception if tokens don't exist or if they aren't valid
         //as the tokens don't exist yet or aren't valid, we shall retrieve them from devinci's server
         try {
           await getTokens();
-        } catch (exception) {
+        } catch (exception, stacktrace) {
+          FLog.logThis(
+              className: 'Student',
+              methodName: 'init',
+              text: 'get tokens exception',
+              type: LogLevel.ERROR,
+              exception: Exception(exception),
+              stacktrace: stacktrace);
           //getTokens throw an exception if an error occurs during the retrieving or if credentials are wrong
           if (code == 500) {
             //the exception was thrown by a dart process, which meens that credentials may be good, but the function had trouble to access the server.
@@ -327,15 +366,28 @@ class Student {
           value:
               username); //save credentials in secure storage if user specified "remember me"
       await globals.storage.write(key: 'password', value: password);
-      l('edt : ' + globals.user.data['edtUrl']);
+      FLog.info(
+          className: 'Student',
+          methodName: 'init',
+          text: 'edt : ' + globals.user.data['edtUrl']);
+      //l('edt : ' + globals.user.data['edtUrl']);
       if (globals.user.data['ecole'] == '' ||
           globals.user.data['edtUrl'] == '') {
         //edtUrl being the last information we retrieve from the getData() function, if it doesn't exist it means that the getData() function didn't work or was never run and must be run at least once.
         try {
-          l("let's go try");
+          FLog.info(
+              className: 'Student', methodName: 'init', text: "let's go try");
+          //l("let's go try");
           await globals.user.getData();
-        } catch (exception) {
-          l(exception);
+        } catch (exception, stacktrace) {
+          FLog.logThis(
+              className: 'Student',
+              methodName: 'init',
+              text: 'getData exception',
+              type: LogLevel.ERROR,
+              exception: Exception(exception),
+              stacktrace: stacktrace);
+          //l(exception);
         }
       }
     }
@@ -346,22 +398,30 @@ class Student {
         var id = sub2.userId;
         Sentry.configureScope(
           (scope) {
-            scope.setTag('app.language', 'locale'.tr());
+            scope.setTag('app.language', 'locale'.tr);
             scope.user =
                 User(email: username, username: tokens['uids'], id: id);
           },
         );
       } catch (e, stacktrace) {
+        FLog.logThis(
+            className: 'Student',
+            methodName: 'init',
+            text: 'Sentry.configureScope exception',
+            type: LogLevel.ERROR,
+            exception: Exception(e),
+            stacktrace: stacktrace);
         Sentry.configureScope(
           (scope) {
-            scope.setTag('app.language', 'locale'.tr());
+            scope.setTag('app.language', 'locale'.tr);
             scope.user = User(email: username, id: tokens['uids']);
           },
         );
       }
     }
     DevinciApi().register();
-    l('done init');
+    FLog.info(className: 'Student', methodName: 'init', text: 'done init');
+    //l('done init');
     return;
   }
 
@@ -373,17 +433,33 @@ class Student {
         Uri.parse('https://www.leonard-de-vinci.net/'),
       );
       var res = await req.close();
-
-      l('statusCode : ${res.statusCode}');
-      l('headers : ${res.headers}');
-      l('STEP 1 : HEADERS - SET-COOKIE : ${res.headers.value("set-cookie")}');
+      FLog.info(
+          className: 'Student',
+          methodName: 'getTokens',
+          text: 'statusCode : ${res.statusCode}');
+      //l('statusCode : ${res.statusCode}');
+      FLog.info(
+          className: 'Student',
+          methodName: 'getTokens',
+          text: 'headers : ${res.headers}');
+      //l('headers : ${res.headers}');
+      FLog.info(
+          className: 'Student',
+          methodName: 'getTokens',
+          text:
+              'STEP 1 : HEADERS - SET-COOKIE : ${res.headers.value("set-cookie")}');
+      //l('STEP 1 : HEADERS - SET-COOKIE : ${res.headers.value("set-cookie")}');
       var regExp = RegExp(r'(.*?)=(.*?)($|;|,(?! ))');
       tokens['alv'] = regExp
           .firstMatch(
             res.headers.value('set-cookie'),
           )
           .group(2);
-      l('ALV : "${tokens['alv']}"');
+      FLog.info(
+          className: 'Student',
+          methodName: 'getTokens',
+          text: 'ALV : "${tokens['alv']}"');
+      //l('ALV : "${tokens['alv']}"');
       if (res.statusCode == 200) {
         req = await client.postUrl(
             Uri.parse('https://www.leonard-de-vinci.net/ajax.inc.php'));
@@ -392,14 +468,34 @@ class Student {
         req.headers.set('Referer', 'https://www.leonard-de-vinci.net/');
         req.headers.set('Cookie', 'alv=${tokens["alv"]}');
         req.write('act=ident_analyse&login=' + Uri.encodeComponent(username));
-        l('[STEP 2] REQ HEADERS : ${req.headers}');
+        FLog.info(
+            className: 'Student',
+            methodName: 'getTokens',
+            text: '[STEP 2] REQ HEADERS : ${req.headers}');
+        //l('[STEP 2] REQ HEADERS : ${req.headers}');
         res = await req.close();
-        l('[STEP 2] statusCode : ${res.statusCode}');
-        l('[STEP 2] RES headers : ${res.headers}');
+        FLog.info(
+            className: 'Student',
+            methodName: 'getTokens',
+            text: '[STEP 2] statusCode : ${res.statusCode}');
+        //l('[STEP 2] statusCode : ${res.statusCode}');
+        FLog.info(
+            className: 'Student',
+            methodName: 'getTokens',
+            text: '[STEP 2] RES headers : ${res.headers}');
+        //l('[STEP 2] RES headers : ${res.headers}');
         var body = await res.transform(utf8.decoder).join();
+        FLog.info(
+            className: 'Student',
+            methodName: 'getTokens',
+            text: '[STEP 2] BODY : $body');
         //l('[STEP 2] BODY : $body');
         if (body.contains('location')) {
-          l('username correct');
+          FLog.info(
+              className: 'Student',
+              methodName: 'getTokens',
+              text: 'username correct');
+          //l('username correct');
 
           req = await client.getUrl(
             Uri.parse(
@@ -409,16 +505,32 @@ class Student {
           req.followRedirects = false;
           req.headers.set('Referer', 'https://www.leonard-de-vinci.net/');
           req.headers.set('Cookie', 'alv=${tokens["alv"]}');
-          l('[STEP 3] REQ HEADERS : ${req.headers}');
+          FLog.info(
+              className: 'Student',
+              methodName: 'getTokens',
+              text: '[STEP 3] REQ HEADERS : ${req.headers}');
+          //l('[STEP 3] REQ HEADERS : ${req.headers}');
           res = await req.close();
-          l('[STEP 3] statusCode : ${res.statusCode}');
-          l('[STEP 3] RES headers : ${res.headers}');
+          FLog.info(
+              className: 'Student',
+              methodName: 'getTokens',
+              text: '[STEP 3] statusCode : ${res.statusCode}');
+          //l('[STEP 3] statusCode : ${res.statusCode}');
+          FLog.info(
+              className: 'Student',
+              methodName: 'getTokens',
+              text: '[STEP 3] RES headers : ${res.headers}');
+          //l('[STEP 3] RES headers : ${res.headers}');
           tokens['SimpleSAML'] = regExp
               .firstMatch(
                 res.headers.value('set-cookie'),
               )
               .group(2);
-          l('SimpleSAML : "${tokens['SimpleSAML']}"');
+          FLog.info(
+              className: 'Student',
+              methodName: 'getTokens',
+              text: 'SimpleSAML : "${tokens['SimpleSAML']}"');
+          //l('SimpleSAML : "${tokens['SimpleSAML']}"');
 
           var redUrl = res.headers.value('location');
 
@@ -426,14 +538,28 @@ class Student {
             Uri.parse(redUrl),
           );
           res = await req.close();
-          l('[STEP 4] statusCode : ${res.statusCode}');
-          l('[STEP 4] RES headers : ${res.headers}');
+          FLog.info(
+              className: 'Student',
+              methodName: 'getTokens',
+              text: '[STEP 4] statusCode : ${res.statusCode}');
+          //l('[STEP 4] statusCode : ${res.statusCode}');
+          FLog.info(
+              className: 'Student',
+              methodName: 'getTokens',
+              text: '[STEP 4] statusCode : ${res.statusCode}');
+          FLog.info(
+              className: 'Student',
+              methodName: 'getTokens',
+              text: '[STEP 4] RES headers : ${res.headers}');
           body = await res.transform(utf8.decoder).join();
           //l('[STEP 4] BODY : $body');
           regExp = RegExp(r'action="\/adfs(.*?)"');
           var url =
               'https://adfs.devinci.fr/adfs' + regExp.firstMatch(body).group(1);
-          l('[STEP 4] url : $url');
+          FLog.info(
+              className: 'Student',
+              methodName: 'getTokens',
+              text: '[STEP 4] url : $url');
 
           req = await client.postUrl(
             Uri.parse(url),
@@ -445,14 +571,26 @@ class Student {
               '&Password=' +
               Uri.encodeComponent(password) +
               '&AuthMethod=FormsAuthentication');
-          l('[STEP 5] REQ HEADERS : ${req.headers}');
+          FLog.info(
+              className: 'Student',
+              methodName: 'getTokens',
+              text: '[STEP 5] REQ HEADERS : ${req.headers}');
           res = await req.close();
-          l('[STEP 5] statusCode : ${res.statusCode}');
-          l('[STEP 5] RES headers : ${res.headers}');
+          FLog.info(
+              className: 'Student',
+              methodName: 'getTokens',
+              text: '[STEP 5] statusCode : ${res.statusCode}');
+          FLog.info(
+              className: 'Student',
+              methodName: 'getTokens',
+              text: '[STEP 5] RES headers : ${res.headers}');
 
           if (res.headers.value('set-cookie') != null &&
               res.statusCode == 302) {
-            l('connected');
+            FLog.info(
+                className: 'Student',
+                methodName: 'getTokens',
+                text: 'connected');
             regExp = RegExp(r'(.*?)=(.*?)($|;|,(?! ))');
             // ignore: non_constant_identifier_names
             var MSISAuth = regExp
@@ -466,15 +604,27 @@ class Student {
               Uri.parse(redUrl),
             );
             req.headers.set('Cookie', 'MSISAuth=' + MSISAuth);
-            l('[STEP 6] REQ HEADERS : ${req.headers}');
+            FLog.info(
+                className: 'Student',
+                methodName: 'getTokens',
+                text: '[STEP 6] REQ HEADERS : ${req.headers}');
             res = await req.close();
-            l('[STEP 6] statusCode : ${res.statusCode}');
-            l('[STEP 6] RES headers : ${res.headers}');
+            FLog.info(
+                className: 'Student',
+                methodName: 'getTokens',
+                text: '[STEP 6] statusCode : ${res.statusCode}');
+            FLog.info(
+                className: 'Student',
+                methodName: 'getTokens',
+                text: '[STEP 6] RES headers : ${res.headers}');
             body = await res.transform(utf8.decoder).join();
             regExp = RegExp(r'value="(.*?)"');
             var value = regExp.firstMatch(body).group(1);
 
-            l('value : $value');
+            FLog.info(
+                className: 'Student',
+                methodName: 'getTokens',
+                text: 'value : $value');
             req = await client.postUrl(
               Uri.parse(
                   'https://www.leonard-de-vinci.net/include/SAML/module.php/saml/sp/saml2-acs.php/devinci-sp'),
@@ -488,12 +638,24 @@ class Student {
                 Uri.encodeComponent(value) +
                 '&RelayState=https://www.leonard-de-vinci.net/login.sso.php';
             req.write(b);
-            l('[STEP 7] REQ HEADERS : ${req.headers}');
+            FLog.info(
+                className: 'Student',
+                methodName: 'getTokens',
+                text: '[STEP 7] REQ HEADERS : ${req.headers}');
             res = await req.close();
-            l('[STEP 7] statusCode : ${res.statusCode}');
-            l('[STEP 7] RES headers : ${res.headers}');
+            FLog.info(
+                className: 'Student',
+                methodName: 'getTokens',
+                text: '[STEP 7] statusCode : ${res.statusCode}');
+            FLog.info(
+                className: 'Student',
+                methodName: 'getTokens',
+                text: '[STEP 7] RES headers : ${res.headers}');
             body = await res.transform(utf8.decoder).join();
-            l("set-cookie : ${res.headers['set-cookie']}");
+            FLog.info(
+                className: 'Student',
+                methodName: 'getTokens',
+                text: "set-cookie : ${res.headers['set-cookie']}");
             if (res.statusCode == 303) {
               redUrl = res.headers.value('location');
               regExp = RegExp(r'(.*?)=(.*?)($|;|,(?! ))');
@@ -502,7 +664,11 @@ class Student {
                     res.headers['set-cookie'][1],
                   )
                   .group(2);
-              l('SimpleSAMLAuthToken : "${tokens["SimpleSAMLAuthToken"]}"');
+              FLog.info(
+                  className: 'Student',
+                  methodName: 'getTokens',
+                  text:
+                      'SimpleSAMLAuthToken : "${tokens["SimpleSAMLAuthToken"]}"');
 
               req = await client.getUrl(
                 Uri.parse(redUrl),
@@ -516,17 +682,29 @@ class Student {
                       tokens['SimpleSAML'] +
                       '; SimpleSAMLAuthToken=' +
                       tokens['SimpleSAMLAuthToken']);
-              l('[STEP 8] REQ HEADERS : ${req.headers}');
+              FLog.info(
+                  className: 'Student',
+                  methodName: 'getTokens',
+                  text: '[STEP 8] REQ HEADERS : ${req.headers}');
               res = await req.close();
-              l('[STEP 8] statusCode : ${res.statusCode}');
-              l('[STEP 8] RES headers : ${res.headers}');
+              FLog.info(
+                  className: 'Student',
+                  methodName: 'getTokens',
+                  text: '[STEP 8] statusCode : ${res.statusCode}');
+              FLog.info(
+                  className: 'Student',
+                  methodName: 'getTokens',
+                  text: '[STEP 8] RES headers : ${res.headers}');
               //body = await res.transform(utf8.decoder).join();
               tokens['uids'] = regExp
                   .firstMatch(
                     res.headers['set-cookie'][2],
                   )
                   .group(2);
-              l('uids : "${tokens["uids"]}"');
+              FLog.info(
+                  className: 'Student',
+                  methodName: 'getTokens',
+                  text: 'uids : "${tokens["uids"]}"');
               await globals.storage.write(
                 key: 'SimpleSAML',
                 value: tokens['SimpleSAML'],
@@ -559,7 +737,10 @@ class Student {
             throw Exception('wrong credentials');
           }
         } else {
-          l('username incorrect');
+          FLog.info(
+              className: 'Student',
+              methodName: 'getTokens',
+              text: 'username incorrect');
           error = true;
           code = 401;
           throw Exception('wrong credentials');
@@ -580,13 +761,20 @@ class Student {
   Future<void> testTokens() async {
     var response = await devinciRequest();
     if (response != null) {
-      l('statusCode : ${response.statusCode}');
-      l('headers : ${response.headers}');
+      FLog.info(
+          className: 'Student',
+          methodName: 'testTokens',
+          text: 'statusCode : ${response.statusCode}');
+      FLog.info(
+          className: 'Student',
+          methodName: 'testTokens',
+          text: 'headers : ${response.headers}');
       var body = await response.transform(utf8.decoder).join();
       if (response.statusCode == 200) {
-        l(body);
+        FLog.info(className: 'Student', methodName: 'testTokens', text: body);
         if (body.contains("('#password').hide();")) {
-          l('error');
+          FLog.info(
+              className: 'Student', methodName: 'testTokens', text: 'error');
           throw Exception('wrong tokens');
         } else {
           error = false;
@@ -604,34 +792,58 @@ class Student {
   }
 
   Future<void> getData() async {
-    l('getData');
+    FLog.info(className: 'Student', methodName: 'getData', text: 'getData');
     var response = await devinciRequest(
         replacementUrl: 'https://www.leonard-de-vinci.net/', log: true);
-    l(response);
+    FLog.info(
+        className: 'Student', methodName: 'getData', text: response.toString());
     if (response != null) {
-      l('statusCode : ${response.statusCode}');
-      l('headers : ${response.headers}');
+      FLog.info(
+          className: 'Student',
+          methodName: 'getData',
+          text: 'statusCode : ${response.statusCode}');
+      FLog.info(
+          className: 'Student',
+          methodName: 'getData',
+          text: 'headers : ${response.headers}');
       var body = await response.transform(utf8.decoder).join();
-      l('get Data');
+      FLog.info(className: 'Student', methodName: 'getData', text: 'get Data');
       if (response.statusCode == 200) {
-        l(body);
+        FLog.info(className: 'Student', methodName: 'getData', text: body);
 
         var doc = parse(body);
-        l(doc.outerHtml);
+        FLog.info(
+            className: 'Student', methodName: 'getData', text: doc.outerHtml);
         var ns = doc.querySelectorAll('#main > div > .row-fluid');
         var n = ns[ns.length - 1].querySelector(
             'div.social-box.social-blue.social-bordered > header > h4');
-        l('n : "${n.innerHtml}"');
+        FLog.info(
+            className: 'Student',
+            methodName: 'getData',
+            text: 'n : "${n.innerHtml}"');
         var regExp = RegExp(r': (.*?)\t');
         data['name'] = regExp.firstMatch(n.text).group(1);
-        l("name : '${data["name"]}'");
+        FLog.info(
+            className: 'Student',
+            methodName: 'getData',
+            text: "name : '${data["name"]}'");
 
         var ds = ns[ns.length - 1].querySelectorAll(
             'div.social-box.social-blue.social-bordered > div > div');
-        l(ds);
-        l('ds 0 : ' + ds[0].innerHtml);
-        l('ds 1 : ' + ds[1].innerHtml);
-        l('ds 2 : ' + ds[2].innerHtml);
+        FLog.info(
+            className: 'Student', methodName: 'getData', text: ds.toString());
+        FLog.info(
+            className: 'Student',
+            methodName: 'getData',
+            text: 'ds 0 : ' + ds[0].innerHtml);
+        FLog.info(
+            className: 'Student',
+            methodName: 'getData',
+            text: 'ds 1 : ' + ds[1].innerHtml);
+        FLog.info(
+            className: 'Student',
+            methodName: 'getData',
+            text: 'ds 2 : ' + ds[2].innerHtml);
         String d;
         var french = true;
         if (doc
@@ -643,24 +855,33 @@ class Student {
         }
         try {
           if (ds[1].innerHtml.contains(french ? 'Identifiant' : 'User ID')) {
-            l('ds1 choosen');
-            l(ds[1].querySelector('div'));
+            FLog.info(
+                className: 'Student',
+                methodName: 'getData',
+                text: 'ds1 choosen');
+            FLog.info(
+                className: 'Student',
+                methodName: 'getData',
+                text: ds[1].querySelector('div').toString());
             d = ds[1]
                 .querySelector('div > div > div.span4 > div > div > address')
                 .text;
-            l('d : $d');
+            FLog.info(
+                className: 'Student', methodName: 'getData', text: 'd : $d');
           } else if (ds[2]
               .innerHtml
               .contains(french ? 'Identifiant' : 'User ID')) {
             d = ds[2]
                 .querySelector('div > div > div.span4 > div > div > address')
                 .text;
-            l('d : $d');
+            FLog.info(
+                className: 'Student', methodName: 'getData', text: 'd : $d');
           } else {
             d = ds[3]
                 .querySelector('div > div > div.span4 > div > div > address')
                 .text;
-            l('d : $d');
+            FLog.info(
+                className: 'Student', methodName: 'getData', text: 'd : $d');
           }
           //detect language of the portail
           if (globals.crashConsent == 'true') {
@@ -670,8 +891,13 @@ class Student {
                     scope.setTag('portail.language', french ? 'fr' : 'en'),
               );
             } catch (e, stacktrace) {
-              l(e);
-              l(stacktrace);
+              FLog.logThis(
+                  className: 'Student',
+                  methodName: 'getData',
+                  text: 'Sentry.configureScope exception',
+                  type: LogLevel.ERROR,
+                  exception: Exception(e),
+                  stacktrace: stacktrace);
             }
           }
 
@@ -689,20 +915,39 @@ class Student {
                 RegExp(r'Administrative ID (.*?)\n').firstMatch(d).group(1);
           }
           data['ine'] = RegExp(r'INE/BEA : (.*?)\n').firstMatch(d).group(1);
-          l("data : ${data["badge"]}|${data["client"]}|${data["idAdmin"]}|${data["ine"]}");
-          // ignore: empty_catches
+          FLog.info(
+              className: 'Student',
+              methodName: 'getData',
+              text:
+                  "data : ${data["badge"]}|${data["client"]}|${data["idAdmin"]}|${data["ine"]}");
         } catch (e, stacktrace) {
-          reportToCrash(e, stacktrace);
+          FLog.logThis(
+              className: 'Student',
+              methodName: 'getData',
+              text: 'exception',
+              type: LogLevel.SEVERE,
+              exception: Exception(e),
+              stacktrace: stacktrace);
+          await reportError(e, stacktrace);
         }
         response = await devinciRequest(endpoint: '?my=edt');
 
-        l('statusCode : ${response.statusCode}');
-        l('headers : ${response.headers}');
+        FLog.info(
+            className: 'Student',
+            methodName: 'getData',
+            text: 'statusCode : ${response.statusCode}');
+        FLog.info(
+            className: 'Student',
+            methodName: 'getData',
+            text: 'headers : ${response.headers}');
         body = await response.transform(utf8.decoder).join();
         if (response.statusCode == 200) {
           data['edtUrl'] = 'https://ical.devinci.me/' +
               RegExp(r'ical.devinci.me\/(.*?)"').firstMatch(body).group(1);
-          l("ical url : ${data["edtUrl"]}");
+          FLog.info(
+              className: 'Student',
+              methodName: 'getData',
+              text: "ical url : ${data["edtUrl"]}");
           await globals.storage.write(
             key: 'badge',
             value: data['badge'],
@@ -758,15 +1003,24 @@ class Student {
       );
       if (res != null) {
         if (res.statusCode == 200) {
-          l('got absences');
+          FLog.info(
+              className: 'Student',
+              methodName: 'getAbsences',
+              text: 'got absences');
           var body = await res.transform(utf8.decoder).join();
           if (!body.contains('Validation des règlements')) {
             var doc = parse(body);
-            l(doc.outerHtml);
+            FLog.info(
+                className: 'Student',
+                methodName: 'getAbsences',
+                text: doc.outerHtml);
             var spans = doc.querySelectorAll('.tab-pane > header > span');
             var nTB = doc
                 .querySelector('.tab-pane > header > span.label.label-warning');
-            l(nTB);
+            FLog.info(
+                className: 'Student',
+                methodName: 'getAbsences',
+                text: nTB.toString());
             var nTM = RegExp(r': (.*?)"').firstMatch(nTB.text + '"').group(1);
             absences['nT'] = int.parse(nTM);
 
@@ -813,14 +1067,20 @@ class Student {
                   tds[6].text.replaceAllMapped(RegExp(r'\s\s+'), (match) => '');
               absences['liste'].add(elem);
             });
-            l(absences['liste']);
+            FLog.info(
+                className: 'Student',
+                methodName: 'getAbsences',
+                text: absences['liste'].toString());
           } else if (body.contains('Validation des règlements')) {
-            final snackBar = material.SnackBar(
-              content: material.Text('school_rules_validation').tr(),
+            Get.snackbar(
+              'warning'.tr,
+              'school_rules_validation'.tr,
               duration: const Duration(seconds: 10),
+              snackPosition: SnackPosition.BOTTOM,
+              borderRadius: 0,
+              margin: material.EdgeInsets.only(
+                  left: 8, right: 8, top: 0, bottom: globals.bottomPadding),
             );
-// Find the Scaffold in the widget tree and use it to show a SnackBar.
-            material.Scaffold.of(globals.getScaffold()).showSnackBar(snackBar);
           }
           absences['done'] = true;
           await globals.store.record('absences').put(globals.db, absences);
@@ -911,8 +1171,12 @@ class Student {
         var body = await res.transform(utf8.decoder).join();
         if (!body.contains('Validation des règlements')) {
           var doc = parse(body);
-          l("body");
-          l(body.contains('Notes'));
+          FLog.info(
+              className: 'Student', methodName: 'getNotesList', text: 'body');
+          FLog.info(
+              className: 'Student',
+              methodName: 'getNotesList',
+              text: body.contains('Notes').toString());
           var tbody = doc.querySelector('tbody');
           var trs = tbody.querySelectorAll('tr');
           notesList.clear();
@@ -928,12 +1192,15 @@ class Student {
             notesList.add([name, p]);
           }
         } else {
-          final snackBar = material.SnackBar(
-            content: material.Text('school_rules_validation').tr(),
+          Get.snackbar(
+            'warning'.tr,
+            'school_rules_validation'.tr,
             duration: const Duration(seconds: 10),
+            snackPosition: SnackPosition.BOTTOM,
+            borderRadius: 0,
+            margin: material.EdgeInsets.only(
+                left: 8, right: 8, top: 0, bottom: globals.bottomPadding),
           );
-// Find the Scaffold in the widget tree and use it to show a SnackBar.
-          material.Scaffold.of(globals.getScaffold()).showSnackBar(snackBar);
         }
       } else {
         error = true;
@@ -972,7 +1239,10 @@ class Student {
       };
       var res = await devinciRequest(endpoint: '?my=notes&p=' + p);
       if (res != null) {
-        l('NOTES - STATUS CODE : ${res.statusCode}');
+        FLog.info(
+            className: 'Student',
+            methodName: 'getNotes',
+            text: 'NOTES - STATUS CODE : ${res.statusCode}');
         if (res.statusCode == 200) {
           var body = await res.transform(utf8.decoder).join();
           if (!body.contains('Aucune note') &&
@@ -1023,8 +1293,15 @@ class Student {
                                 .split(
                                     notesConfig['modules']['item']['!e']['moy']['s'])[
                             notesConfig['modules']['item']['!e']['moy']['si']]);
-                    // ignore: empty_catches
-                  } catch (e) {}
+                  } catch (e, stacktrace) {
+                    FLog.logThis(
+                        className: 'Student',
+                        methodName: 'getNotes',
+                        text: 'exception',
+                        type: LogLevel.ERROR,
+                        exception: Exception(e),
+                        stacktrace: stacktrace);
+                  }
                   try {
                     elem['nf'] = double.parse(
                         RegExp(notesConfig['modules']['item']['!e']['nf']['r'])
@@ -1032,8 +1309,15 @@ class Student {
                                     ['!e']['nf']['i']] +
                                 notesConfig['modules']['item']['!e']['nf']['+'])
                             .group(1));
-                    // ignore: empty_catches
-                  } catch (e) {}
+                  } catch (e, stacktrace) {
+                    FLog.logThis(
+                        className: 'Student',
+                        methodName: 'getNotes',
+                        text: 'exception',
+                        type: LogLevel.ERROR,
+                        exception: Exception(e),
+                        stacktrace: stacktrace);
+                  }
                   try {
                     elem['moyP'] = double.parse(RegExp(
                             notesConfig['modules']['item']['!e']['moyP']['r'])
@@ -1041,8 +1325,15 @@ class Student {
                                 ['moyP']['i']] +
                             notesConfig['modules']['item']['!e']['moyP']['+'])
                         .group(1));
-                    // ignore: empty_catches
-                  } catch (e) {}
+                  } catch (e, stacktrace) {
+                    FLog.logThis(
+                        className: 'Student',
+                        methodName: 'getNotes',
+                        text: 'exception',
+                        type: LogLevel.ERROR,
+                        exception: Exception(e),
+                        stacktrace: stacktrace);
+                  }
                 }
                 nn['s'][y].add(elem);
 
@@ -1050,181 +1341,219 @@ class Student {
 
                 var ddlist = li.querySelector('ol');
                 var j = 0;
-                ddlist.children.forEach((lii) {
-                  ddhandle = lii.querySelector('div');
-                  texts = ddhandle.text.split('\n');
-                  //String prettyprint = encoder.convert(texts);
-                  //l(prettyprint);
-                  elem = {
-                    'matiere': '',
-                    'moy': 0.0,
-                    'moyP': 0.0,
-                    'notes': [],
-                    'c': true
-                  };
+                try {
+                  ddlist.children.forEach((lii) {
+                    ddhandle = lii.querySelector('div');
+                    texts = ddhandle.text.split('\n');
+                    //String prettyprint = encoder.convert(texts);
+                    //l(prettyprint);
+                    elem = {
+                      'matiere': '',
+                      'moy': 0.0,
+                      'moyP': 0.0,
+                      'notes': [],
+                      'c': true
+                    };
 
-                  elem['matiere'] = texts[notesConfig['matieres']['mi']]
-                      .replaceAllMapped(
-                          RegExp(notesConfig['matieres']['mr']), (match) => '');
-                  elem['moy'] = null;
-                  elem['moyP'] = null;
-                  if (!texts[notesConfig['matieres']['ei']]
-                      .contains(notesConfig['matieres']['eStr'])) {
-                    try {
-                      elem['moy'] = double.parse(texts[notesConfig['matieres']
-                              ['!e']['moy']['i']]
-                          .replaceAllMapped(
-                              RegExp(notesConfig['matieres']['!e']['moy']['r']),
-                              (match) => '')
-                          .split(notesConfig['matieres']['!e']['moy']
-                              ['s'])[notesConfig['matieres']['!e']['moy']
-                          ['si']]);
-                      // ignore: empty_catches
-                    } catch (e) {
+                    elem['matiere'] = texts[notesConfig['matieres']['mi']]
+                        .replaceAllMapped(RegExp(notesConfig['matieres']['mr']),
+                            (match) => '');
+                    elem['moy'] = null;
+                    elem['moyP'] = null;
+                    if (!texts[notesConfig['matieres']['ei']]
+                        .contains(notesConfig['matieres']['eStr'])) {
                       try {
-                        if (texts[notesConfig['matieres']['!e']['moy']['i']]
+                        elem['moy'] = double.parse(
+                            texts[notesConfig['matieres']['!e']['moy']['i']]
                                 .replaceAllMapped(
                                     RegExp(notesConfig['matieres']['!e']['moy']
                                         ['r']),
                                     (match) => '')
                                 .split(notesConfig['matieres']['!e']['moy']
                                     ['s'])[notesConfig['matieres']['!e']['moy']
-                                ['si']] ==
-                            'Validé') {
-                          elem['moy'] = 100.0;
-                        }
-                      } catch (e) {}
-                    }
-                    l(elem['moy']);
-                    try {
-                      if (!texts[notesConfig['matieres']['!e']['ri']]
-                          .contains(notesConfig['matieres']['!e']['rStr'])) {
+                                ['si']]);
+                      } catch (e, stacktrace) {
                         try {
-                          elem['moyP'] = double.parse(RegExp(
-                                  notesConfig['matieres']['!e']['!r']['moyP']
+                          if (texts[notesConfig['matieres']['!e']['moy']['i']]
+                                  .replaceAllMapped(
+                                      RegExp(notesConfig['matieres']['!e']
+                                          ['moy']['r']),
+                                      (match) => '')
+                                  .split(notesConfig['matieres']['!e']['moy']
+                                      ['s'])[notesConfig['matieres']['!e']
+                                  ['moy']['si']] ==
+                              'Validé') {
+                            elem['moy'] = 100.0;
+                          }
+                        } catch (e, stacktrace) {
+                          FLog.logThis(
+                              className: 'Student',
+                              methodName: 'getNotes',
+                              text: 'exception',
+                              type: LogLevel.INFO,
+                              exception: Exception(e),
+                              stacktrace: stacktrace);
+                        }
+                      }
+                      FLog.info(
+                          className: 'Student',
+                          methodName: 'getNotes moy',
+                          text: elem['moy'].toString());
+                      try {
+                        if (!texts[notesConfig['matieres']['!e']['ri']]
+                            .contains(notesConfig['matieres']['!e']['rStr'])) {
+                          try {
+                            elem['moyP'] = double.parse(RegExp(
+                                    notesConfig['matieres']['!e']['!r']['moyP']
+                                        ['r'])
+                                .firstMatch(texts[notesConfig['matieres']['!e']
+                                        ['!r']['moyP']['i']] +
+                                    notesConfig['matieres']['!e']['!r']['moyP']
+                                        ['+'])
+                                .group(1));
+                          } catch (e) {
+                            elem['moyP'] = null;
+                          }
+                        } else {
+                          var noteR = double.parse(RegExp(
+                                  notesConfig['matieres']['!e']['r']['noteR']
                                       ['r'])
                               .firstMatch(texts[notesConfig['matieres']['!e']
-                                      ['!r']['moyP']['i']] +
-                                  notesConfig['matieres']['!e']['!r']['moyP']
+                                      ['r']['noteR']['i']] +
+                                  notesConfig['matieres']['!e']['r']['noteR']
                                       ['+'])
                               .group(1));
-                        } catch (e) {
-                          elem['moyP'] = null;
-                        }
-                      } else {
-                        var noteR = double.parse(RegExp(notesConfig['matieres']
-                                ['!e']['r']['noteR']['r'])
-                            .firstMatch(texts[notesConfig['matieres']['!e']['r']
-                                    ['noteR']['i']] +
-                                notesConfig['matieres']['!e']['r']['noteR']
-                                    ['+'])
-                            .group(1));
-                        if (noteR > elem['moy']) {
-                          if (noteR > 10) {
-                            elem['moy'] = 10.0;
-                          } else {
-                            elem['moy'] = noteR;
+                          if (noteR > elem['moy']) {
+                            if (noteR > 10) {
+                              elem['moy'] = 10.0;
+                            } else {
+                              elem['moy'] = noteR;
+                            }
                           }
+                          var e = {
+                            'nom':
+                                'MESIMF120419-CC-1 Rattrapage' + 're_take'.tr,
+                            'note': noteR,
+                            'noteP': null,
+                            //"date": timestamp
+                          };
+
+                          elem['notes'].add(e);
+
+                          elem['moyP'] = double.parse(RegExp(
+                                  notesConfig['matieres']['!e']['r']['moyP']
+                                      ['r'])
+                              .firstMatch(texts[notesConfig['matieres']['!e']
+                                      ['r']['moyP']['i']] +
+                                  notesConfig['matieres']['!e']['r']['moyP']
+                                      ['+'])
+                              .group(1));
                         }
-                        var e = {
-                          'nom':
-                              'MESIMF120419-CC-1 Rattrapage' + 're_take'.tr(),
-                          'note': noteR,
-                          'noteP': null,
+                      } catch (e, stacktrace) {
+                        FLog.logThis(
+                            className: 'Student',
+                            methodName: 'getNotes',
+                            text: 'exception',
+                            type: LogLevel.INFO,
+                            exception: Exception(e),
+                            stacktrace: stacktrace);
+                      }
+                    }
+                    nn['s'][y][i]['matieres'].add(elem);
+                    //nn["s${y + 1}"][i]["matieres"].add(elem);
+                    ddlist = lii.querySelector('ol');
+                    if (ddlist != null) {
+                      ddlist.children.forEach((liii) {
+                        ddhandle = liii.querySelector('div');
+                        texts = ddhandle.text.split('\n');
+                        elem = {
+                          'nom': '',
+                          'note': 0.0,
+                          'noteP': 0.0,
                           //"date": timestamp
                         };
-
-                        elem['notes'].add(e);
-
-                        elem['moyP'] = double.parse(RegExp(
-                                notesConfig['matieres']['!e']['r']['moyP']['r'])
-                            .firstMatch(texts[notesConfig['matieres']['!e']['r']
-                                    ['moyP']['i']] +
-                                notesConfig['matieres']['!e']['r']['moyP']['+'])
-                            .group(1));
-                      }
-                      // ignore: empty_catches
-                    } catch (e) {}
-                  }
-                  nn['s'][y][i]['matieres'].add(elem);
-                  //nn["s${y + 1}"][i]["matieres"].add(elem);
-                  ddlist = lii.querySelector('ol');
-                  if (ddlist != null) {
-                    ddlist.children.forEach((liii) {
-                      ddhandle = liii.querySelector('div');
-                      texts = ddhandle.text.split('\n');
-                      elem = {
-                        'nom': '',
-                        'note': 0.0,
-                        'noteP': 0.0,
-                        //"date": timestamp
-                      };
-                      elem['nom'] = texts[notesConfig['notes']['n']['i']]
-                          .replaceAllMapped(
-                              RegExp(notesConfig['notes']['n']['r']),
-                              (match) => '');
-                      if (texts.length < notesConfig['notes']['tl']) {
-                        elem['note'] = null;
-                        elem['noteP'] = null;
-                      } else {
-                        var temp = texts[notesConfig['notes']['note']['i']]
-                                .replaceAllMapped(
-                                    RegExp(notesConfig['notes']['note']['r']),
-                                    (match) => '')
-                                .split(notesConfig['notes']['note']['s'])[
-                            notesConfig['notes']['note']['si']];
-                        if (temp.contains('Absence')) {
-                          elem['note'] = 0.12345;
+                        elem['nom'] = texts[notesConfig['notes']['n']['i']]
+                            .replaceAllMapped(
+                                RegExp(notesConfig['notes']['n']['r']),
+                                (match) => '');
+                        if (texts.length < notesConfig['notes']['tl']) {
+                          elem['note'] = null;
+                          elem['noteP'] = null;
                         } else {
+                          var temp = texts[notesConfig['notes']['note']['i']]
+                                  .replaceAllMapped(
+                                      RegExp(notesConfig['notes']['note']['r']),
+                                      (match) => '')
+                                  .split(notesConfig['notes']['note']['s'])[
+                              notesConfig['notes']['note']['si']];
+                          if (temp.contains('Absence')) {
+                            elem['note'] = 0.12345;
+                          } else {
+                            try {
+                              elem['note'] = double.parse(texts[
+                                      notesConfig['notes']['note']['i']]
+                                  .replaceAllMapped(
+                                      RegExp(notesConfig['notes']['note']['r']),
+                                      (match) => '')
+                                  .split(notesConfig['notes']['note']
+                                      ['s'])[notesConfig['notes']['note']
+                                  ['si']]);
+                            } catch (e, stacktrace) {
+                              FLog.logThis(
+                                  className: 'Student',
+                                  methodName: 'getNotes',
+                                  text: 'exception',
+                                  type: LogLevel.INFO,
+                                  exception: Exception(e),
+                                  stacktrace: stacktrace);
+                            }
+                          }
+                          elem['noteP'] = null;
                           try {
-                            elem['note'] = double.parse(texts[
-                                    notesConfig['notes']['note']['i']]
-                                .replaceAllMapped(
-                                    RegExp(notesConfig['notes']['note']['r']),
-                                    (match) => '')
-                                .split(notesConfig['notes']['note']
-                                    ['s'])[notesConfig['notes']['note']['si']]);
+                            elem['noteP'] = double.parse(
+                                RegExp(notesConfig['notes']['nP']['r'])
+                                    .firstMatch(
+                                        texts[notesConfig['notes']['nP']['i']] +
+                                            notesConfig['notes']['nP']['+'])
+                                    .group(1));
                           } catch (e, stacktrace) {
-                            Sentry.addBreadcrumb(Breadcrumb(
-                                message: 'failed to double parse : ' +
-                                    texts[notesConfig['notes']['note']['i']]
-                                        .replaceAllMapped(
-                                            RegExp(notesConfig['notes']['note']
-                                                ['r']),
-                                            (match) => '')
-                                        .split(notesConfig['notes']['note']
-                                            ['s'])[notesConfig['notes']['note']
-                                        ['si']]));
-                            reportError(e, stacktrace);
+                            FLog.logThis(
+                                className: 'Student',
+                                methodName: 'getNotes',
+                                text: 'exception',
+                                type: LogLevel.INFO,
+                                exception: Exception(e),
+                                stacktrace: stacktrace);
                           }
                         }
-                        elem['noteP'] = null;
-                        try {
-                          elem['noteP'] = double.parse(
-                              RegExp(notesConfig['notes']['nP']['r'])
-                                  .firstMatch(
-                                      texts[notesConfig['notes']['nP']['i']] +
-                                          notesConfig['notes']['nP']['+'])
-                                  .group(1));
-                          // ignore: empty_catches
-                        } catch (e) {}
-                      }
-                      nn['s'][y][i]['matieres'][j]['notes'].add(elem);
-                      //nn["s${y + 1}"][i]["matieres"][j]["notes"].add(elem);
-                    });
-                  }
-                  j++;
-                });
+                        nn['s'][y][i]['matieres'][j]['notes'].add(elem);
+                        //nn["s${y + 1}"][i]["matieres"][j]["notes"].add(elem);
+                      });
+                    }
+                    j++;
+                  });
+                } catch (e, stacktrace) {
+                  FLog.logThis(
+                      className: 'Student',
+                      methodName: 'getNotes',
+                      text: 'exception',
+                      type: LogLevel.INFO,
+                      exception: Exception(e),
+                      stacktrace: stacktrace);
+                }
                 i++;
               }
             }
           } else if (body.contains('Validation des règlements')) {
-            final snackBar = material.SnackBar(
-              content: material.Text('school_rules_validation').tr(),
+            Get.snackbar(
+              'warning'.tr,
+              'school_rules_validation'.tr,
               duration: const Duration(seconds: 10),
+              snackPosition: SnackPosition.BOTTOM,
+              borderRadius: 0,
+              margin: material.EdgeInsets.only(
+                  left: 8, right: 8, top: 0, bottom: globals.bottomPadding),
             );
-// Find the Scaffold in the widget tree and use it to show a SnackBar.
-            material.Scaffold.of(globals.getScaffold()).showSnackBar(snackBar);
           }
         } else {
           error = true;
@@ -1253,7 +1582,8 @@ class Student {
       notes[index] = nn;
       await globals.store.record('notes').put(globals.db, notes);
       notesFetched = true;
-      l('db updated');
+      FLog.info(
+          className: 'Student', methodName: 'getNotes', text: 'db updated');
     } else {
       notesFetched = true;
     }
@@ -1266,6 +1596,7 @@ class Student {
       if (res != null) {
         if (res.statusCode == 200) {
           var body = await res.transform(utf8.decoder).join();
+          FLog.info(text: body);
           if (!body.contains('Validation des règlements')) {
             try {
               var doc = parse(body);
@@ -1281,13 +1612,6 @@ class Student {
                             .querySelectorAll('tr')
                             .length;
                     i++) {
-                  l('[1]' +
-                      doc
-                          .querySelectorAll(
-                              '.social-box.social-bordered.span6')[1]
-                          .querySelectorAll('tr')[i]
-                          .querySelectorAll('td')[1]
-                          .text);
                   if (doc
                       .querySelectorAll('.social-box.social-bordered.span6')[1]
                       .querySelectorAll('tr')[i]
@@ -1321,9 +1645,18 @@ class Student {
                             .querySelectorAll('a')[1]
                             .attributes['href'];
 
-                l('[2]' + documents['certificat']['annee']);
-                l('[3]' + documents['certificat']['fr_url']);
-                l('[4]' + documents['certificat']['en_url']);
+                FLog.info(
+                    className: 'Student',
+                    methodName: 'getDocuments',
+                    text: '[2]' + documents['certificat']['annee']);
+                FLog.info(
+                    className: 'Student',
+                    methodName: 'getDocuments',
+                    text: '[3]' + documents['certificat']['fr_url']);
+                FLog.info(
+                    className: 'Student',
+                    methodName: 'getDocuments',
+                    text: '[4]' + documents['certificat']['en_url']);
 
                 var imaginrElements = doc
                     .querySelectorAll('.social-box.social-bordered.span6')[1]
@@ -1337,6 +1670,13 @@ class Student {
                             .querySelectorAll('a')[0]
                             .attributes['href'];
               } catch (e, stacktrace) {
+                FLog.logThis(
+                    className: 'Student',
+                    methodName: 'getDocuments',
+                    text: 'exception',
+                    type: LogLevel.ERROR,
+                    exception: Exception(e),
+                    stacktrace: stacktrace);
                 await reportError(e, stacktrace);
               }
               var calendrierIndex = 4;
@@ -1365,24 +1705,45 @@ class Student {
                   }
                 }
               } catch (e, stacktrace) {
-                reportError(e, stacktrace);
+                FLog.logThis(
+                    className: 'Student',
+                    methodName: 'getDocuments',
+                    text: 'exception',
+                    type: LogLevel.ERROR,
+                    exception: Exception(e),
+                    stacktrace: stacktrace);
               }
 
-              documents['calendrier']['url'] =
-                  'https://www.leonard-de-vinci.net' +
-                      doc
-                          .querySelectorAll(
-                              '.social-box.social-bordered.span6')[0]
-                          .querySelectorAll('a')[calendrierIndex]
-                          .attributes['href'];
-              documents['calendrier']['annee'] = RegExp(r'\d{4}-\d{4}')
-                  .firstMatch(doc
-                      .querySelectorAll('.social-box.social-bordered.span6')[0]
-                      .querySelectorAll('a')[calendrierIndex]
-                      .text)
-                  .group(0);
+              try {
+                documents['calendrier']['url'] =
+                    'https://www.leonard-de-vinci.net' +
+                        doc
+                            .querySelectorAll(
+                                '.social-box.social-bordered.span6')[0]
+                            .querySelectorAll('a')[calendrierIndex]
+                            .attributes['href'];
+                documents['calendrier']['annee'] = RegExp(r'\d{4}-\d{4}')
+                    .firstMatch(doc
+                        .querySelectorAll(
+                            '.social-box.social-bordered.span6')[0]
+                        .querySelectorAll('a')[calendrierIndex]
+                        .text)
+                    .group(0);
+              } catch (e, stacktrace) {
+                FLog.logThis(
+                    className: 'Student',
+                    methodName: 'getDocuments',
+                    text: 'exception',
+                    type: LogLevel.ERROR,
+                    exception: Exception(e),
+                    stacktrace: stacktrace);
+              }
 
-              l('[5] calendrier : ${documents["calendrier"]["annee"]}|${documents["calendrier"]["url"]}');
+              FLog.info(
+                  className: 'Student',
+                  methodName: 'getDocuments',
+                  text:
+                      '[5] calendrier : ${documents["calendrier"]["annee"]}|${documents["calendrier"]["url"]}');
               //documents liés aux notes :
               await getNotesList();
               for (var item in notesList) {
@@ -1395,7 +1756,10 @@ class Student {
                         .querySelectorAll('div.body')[
                             doc.querySelectorAll('div.body').length - 2]
                         .querySelectorAll('a:not(.label)');
-                    l('[6]' + filesA.toString());
+                    FLog.info(
+                        className: 'Student',
+                        methodName: 'getDocuments',
+                        text: '[6]' + filesA.toString());
                     documents['bulletins'].clear();
                     for (var i = 0; i < filesA.length; i += 2) {
                       documents['bulletins'].add({
@@ -1418,20 +1782,33 @@ class Student {
                       });
                     }
                   }
-                  l('[7]' + documents['bulletins'].toString());
+                  FLog.info(
+                      className: 'Student',
+                      methodName: 'getDocuments',
+                      text: '[7]' + documents['bulletins'].toString());
                 }
               }
               //res = await devinciRequest(endpoint: '?my=notes');
             } catch (e, stacktrace) {
+              FLog.logThis(
+                  className: 'Student',
+                  methodName: 'getDocuments',
+                  text: 'exception',
+                  type: LogLevel.ERROR,
+                  exception: Exception(e),
+                  stacktrace: stacktrace);
               await reportError(e, stacktrace);
             }
           } else if (body.contains('Validation des règlements')) {
-            final snackBar = material.SnackBar(
-              content: material.Text('school_rules_validation').tr(),
+            Get.snackbar(
+              'warning'.tr,
+              'school_rules_validation'.tr,
               duration: const Duration(seconds: 10),
+              snackPosition: SnackPosition.BOTTOM,
+              borderRadius: 0,
+              margin: material.EdgeInsets.only(
+                  left: 8, right: 8, top: 0, bottom: globals.bottomPadding),
             );
-// Find the Scaffold in the widget tree and use it to show a SnackBar.
-            material.Scaffold.of(globals.getScaffold()).showSnackBar(snackBar);
           }
         }
       }
@@ -1492,13 +1869,22 @@ class Student {
                     .querySelector('span')
                     .attributes['title']
                     .split(': ')[1];
-              } catch (e) {
-                l(e);
+              } catch (e, stacktrace) {
+                FLog.logThis(
+                    className: 'Student',
+                    methodName: 'getPresence',
+                    text: 'exception',
+                    type: LogLevel.ERROR,
+                    exception: Exception(e),
+                    stacktrace: stacktrace);
               }
               var nextLink = tds[3].querySelector('a').attributes['href'];
               res = await devinciRequest(endpoint: nextLink.substring(1));
               if (res.statusCode == 200) {
-                l('go');
+                FLog.info(
+                    className: 'Student',
+                    methodName: 'getPresence',
+                    text: 'go');
                 var body = await res.transform(utf8.decoder).join();
                 if (body.contains('pas encore ouvert')) {
                   presence[i]['type'] = 'notOpen';
@@ -1533,7 +1919,10 @@ class Student {
     } else {
       throw Exception(503); //service unavailable
     }
-    l(presence);
+    FLog.info(
+        className: 'Student',
+        methodName: 'getPresence',
+        text: presence.toString());
     return;
   }
 
@@ -1605,7 +1994,10 @@ class Student {
         for (var header in headers) {
           sallesStr.add(header.text);
         }
-        l(sallesStr.join(' | '));
+        FLog.info(
+            className: 'Student',
+            methodName: 'getSallesLibres',
+            text: sallesStr.join(' | '));
         var bodyTrs = tbody.querySelectorAll('tr');
         for (var tr in bodyTrs) {
           var name = tr.querySelector('a').text;
@@ -1624,7 +2016,10 @@ class Student {
           for (var i = 0; i < tds.length; i++) {
             var td = tds[i];
             if (name.contains('103')) {
-              l(td.outerHtml);
+              FLog.info(
+                  className: 'Student',
+                  methodName: 'getSallesLibres',
+                  text: td.outerHtml);
             }
             if (td.outerHtml.contains('slp_stab_cell')) {
               try {
@@ -1633,8 +2028,15 @@ class Student {
                 for (var j = 0; j < coll; j++) {
                   oc.add(true);
                 }
-                // ignore: empty_catches
-              } catch (e) {}
+              } catch (e, stacktrace) {
+                FLog.logThis(
+                    className: 'Student',
+                    methodName: 'getSallesLibres',
+                    text: 'exception',
+                    type: LogLevel.ERROR,
+                    exception: Exception(e),
+                    stacktrace: stacktrace);
+              }
             } else {
               oc.add(false);
             }

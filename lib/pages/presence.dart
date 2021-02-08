@@ -1,4 +1,3 @@
-import 'package:devinci/extra/CommonWidgets.dart';
 import 'package:devinci/libraries/devinci/extra/functions.dart';
 import 'package:devinci/libraries/flutter_progress_button/flutter_progress_button.dart';
 import 'package:flutter/cupertino.dart';
@@ -10,7 +9,9 @@ import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:devinci/extra/globals.dart' as globals;
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:easy_localization/easy_localization.dart';
+// import 'package:easy_localization/easy_localization.dart';
+import 'package:get/get.dart';
+import 'package:f_logs/f_logs.dart';
 
 class PresencePage extends TraceableStatefulWidget {
   final bool inSidePanel;
@@ -36,21 +37,32 @@ class _PresencePageState extends State<PresencePage> {
     try {
       await globals.user.getPresence(force: true);
     } catch (e, stacktrace) {
-      l('needs reconnection');
-      final snackBar = SnackBar(
-        content: Text('reconnecting').tr(),
+      FLog.info(
+          className: '_PresencePageState',
+          methodName: 'runBeforeBuild',
+          text: 'needs reconnection');
+      Get.snackbar(
+        null,
+        'reconnecting'.tr,
         duration: const Duration(seconds: 10),
+        snackPosition: SnackPosition.BOTTOM,
+        borderRadius: 0,
+        margin: EdgeInsets.only(
+            left: 8, right: 8, top: 0, bottom: globals.bottomPadding),
       );
-// Find the Scaffold in the widget tree and use it to show a SnackBar.
-      Scaffold.of(context).showSnackBar(snackBar);
       try {
         await globals.user.getTokens();
       } catch (e, stacktrace) {
-        l(e);
-        l(stacktrace);
+        FLog.logThis(
+            className: '_PresencePageState',
+            methodName: 'runBeforeBuild',
+            text: 'exception',
+            type: LogLevel.ERROR,
+            exception: Exception(e),
+            stacktrace: stacktrace);
       }
       await globals.user.getPresence(force: true);
-      Scaffold.of(context).removeCurrentSnackBar();
+      Get.back();
     }
     if (mounted) {
       setState(() {
@@ -62,7 +74,13 @@ class _PresencePageState extends State<PresencePage> {
       try {
         _pageController.jumpToPage(globals.user.presenceIndex);
       } catch (e, stacktrace) {
-        await reportError(e, stacktrace);
+        FLog.logThis(
+            className: '_PresencePageState',
+            methodName: 'runBeforeBuild',
+            text: 'exception',
+            type: LogLevel.ERROR,
+            exception: Exception(e),
+            stacktrace: stacktrace);
       }
     }
   }
@@ -77,21 +95,32 @@ class _PresencePageState extends State<PresencePage> {
     try {
       await globals.user.getPresence(force: true);
     } catch (e, stacktrace) {
-      l('needs reconnection');
-      final snackBar = SnackBar(
-        content: Text('reconnecting').tr(),
+      FLog.info(
+          className: '_PresencePageState',
+          methodName: '_onRefresh',
+          text: 'needs reconnection');
+      Get.snackbar(
+        null,
+        'reconnecting'.tr,
         duration: const Duration(seconds: 10),
+        snackPosition: SnackPosition.BOTTOM,
+        borderRadius: 0,
+        margin: EdgeInsets.only(
+            left: 8, right: 8, top: 0, bottom: globals.bottomPadding),
       );
-// Find the Scaffold in the widget tree and use it to show a SnackBar.
-      Scaffold.of(context).showSnackBar(snackBar);
       try {
         await globals.user.getTokens();
       } catch (e, stacktrace) {
-        l(e);
-        l(stacktrace);
+        FLog.logThis(
+            className: '_PresencePageState',
+            methodName: '_onRefresh',
+            text: 'exception',
+            type: LogLevel.ERROR,
+            exception: Exception(e),
+            stacktrace: stacktrace);
       }
       await globals.user.getPresence(force: true);
-      Scaffold.of(context).removeCurrentSnackBar();
+      Get.back();
     }
     if (mounted) {
       setState(() {
@@ -124,7 +153,7 @@ class _PresencePageState extends State<PresencePage> {
                   child: Center(
                     child: Text(
                         globals.user.presence[i]['type'] == 'none'
-                            ? 'no_class'.tr()
+                            ? 'no_class'.tr
                             : globals.user.presence[i]['title'],
                         overflow: TextOverflow.fade,
                         softWrap: false,
@@ -190,14 +219,14 @@ class _PresencePageState extends State<PresencePage> {
                       child: Padding(
                         padding: EdgeInsets.symmetric(horizontal: 18),
                         child: Text(
-                          'ongoing',
+                          'ongoing'.tr,
                           style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
                               color: globals.currentTheme.isDark()
                                   ? Colors.black
                                   : Colors.white),
-                        ).tr(),
+                        ),
                       ),
                       onPressed: () async {
                         setState(() {
@@ -209,37 +238,62 @@ class _PresencePageState extends State<PresencePage> {
                             buttonState = ButtonState.normal;
                           });
                         } catch (e, stacktrace) {
-                          l('needs reconnection');
-                          final snackBar = SnackBar(
-                            content: Text('reconnecting').tr(),
+                          FLog.info(
+                              className: '_PresencePageState',
+                              methodName: 'pageGen',
+                              text: 'needs reconnection');
+                          Get.snackbar(
+                            null,
+                            'reconnecting'.tr,
                             duration: const Duration(seconds: 10),
+                            snackPosition: SnackPosition.BOTTOM,
+                            borderRadius: 0,
+                            margin: EdgeInsets.only(
+                                left: 8,
+                                right: 8,
+                                top: 0,
+                                bottom: globals.bottomPadding),
                           );
-// Find the Scaffold in the widget tree and use it to show a SnackBar.
-                          Scaffold.of(context).showSnackBar(snackBar);
                           try {
                             await globals.user.getTokens();
                           } catch (e, stacktrace) {
-                            l(e);
-                            l(stacktrace);
+                            FLog.logThis(
+                                className: '_PresencePageState',
+                                methodName: 'pageGen',
+                                text: 'exception',
+                                type: LogLevel.ERROR,
+                                exception: Exception(e),
+                                stacktrace: stacktrace);
                           }
-                          Scaffold.of(context).removeCurrentSnackBar();
+                          Get.back();
                           try {
                             await globals.user.setPresence(i);
                             setState(() {
                               buttonState = ButtonState.normal;
                             });
-                          } catch (exception) {
+                          } catch (exception, stacktrace) {
+                            FLog.logThis(
+                                className: '_PresencePageState',
+                                methodName: 'pageGen',
+                                text: 'exception',
+                                type: LogLevel.ERROR,
+                                exception: Exception(e),
+                                stacktrace: stacktrace);
                             setState(() {
                               buttonState = ButtonState.error;
                             });
-                            final snackBar = SnackBar(
-                              content: Text('error_msg').tr(),
+                            Get.snackbar(
+                              'error'.tr,
+                              'error_msg'.tr,
                               duration: const Duration(seconds: 6),
+                              snackPosition: SnackPosition.BOTTOM,
+                              borderRadius: 0,
+                              margin: EdgeInsets.only(
+                                  left: 8,
+                                  right: 8,
+                                  top: 0,
+                                  bottom: globals.bottomPadding),
                             );
-
-// Find the Scaffold in the widget tree and use it to show a SnackBar.
-                            Scaffold.of(globals.getScaffold())
-                                .showSnackBar(snackBar);
                           }
                         }
                       },
@@ -267,12 +321,12 @@ class _PresencePageState extends State<PresencePage> {
                       child: Padding(
                         padding: EdgeInsets.symmetric(horizontal: 18),
                         child: Text(
-                          'notOpen',
+                          'notOpen'.tr,
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.w500,
                           ),
-                        ).tr(),
+                        ),
                       ),
                       onPressed: null,
                       buttonState: buttonState,
@@ -284,13 +338,13 @@ class _PresencePageState extends State<PresencePage> {
                       child: Padding(
                         padding: EdgeInsets.symmetric(horizontal: 18),
                         child: Text(
-                          'closed',
+                          'closed'.tr,
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.w500,
                             color: Colors.white,
                           ),
-                        ).tr(),
+                        ),
                       ),
                       onPressed: null,
                       buttonState: buttonState,
@@ -343,7 +397,7 @@ class _PresencePageState extends State<PresencePage> {
                     child: Center(
                       child: RichText(
                         text: TextSpan(
-                          text: '${'password'.tr()} : ',
+                          text: '${'password'.tr} : ',
                           style: DefaultTextStyle.of(context).style,
                           children: <TextSpan>[
                             TextSpan(
@@ -421,10 +475,9 @@ class _PresencePageState extends State<PresencePage> {
                       padding:
                           const EdgeInsets.only(top: 62, left: 8, right: 8),
                       child: Center(
-                        child: Text('no_class',
-                                overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context).textTheme.headline2)
-                            .tr(),
+                        child: Text('no_class'.tr,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.headline2),
                       ),
                     ),
                     Padding(

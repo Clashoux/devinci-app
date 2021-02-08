@@ -1,5 +1,4 @@
 import 'package:devinci/extra/CommonWidgets.dart';
-import 'package:devinci/extra/measureSize.dart';
 import 'package:devinci/pages/components/notes.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -9,7 +8,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:matomo/matomo.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:devinci/pages/logic/notes.dart';
-import 'package:easy_localization/easy_localization.dart';
+//import 'package:easy_localization/easy_localization.dart';
+import 'package:get/get.dart';
 
 class NotesPage extends TraceableStatefulWidget {
   NotesPage({Key key}) : super(key: key);
@@ -34,9 +34,6 @@ class NotesPageState extends State<NotesPage> {
 
   @override
   Widget build(BuildContext context) {
-    Widget result = SizedBox
-        .shrink(); //de base je met un SizedBox.shrink() parce que c'est l'"équivalent" du null en widget sans que ca casse tout si c'est ca qui est renvoyé.
-
     if (show) {
       if (!globals.isConnected && globals.user.notes.isEmpty) {
         //hors-connexion et pas de données backup
@@ -47,7 +44,7 @@ class NotesPageState extends State<NotesPage> {
               Icon(Icons.wifi_off_rounded, size: 32),
               Padding(
                 padding: const EdgeInsets.only(top: 8),
-                child: Text('offline').tr(),
+                child: Text('offline'.tr),
               ),
             ],
           ),

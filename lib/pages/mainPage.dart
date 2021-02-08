@@ -7,13 +7,15 @@ import 'package:devinci/pages/settings.dart';
 import 'package:devinci/pages/ui/absences.dart';
 import 'package:devinci/pages/ui/notes.dart';
 import 'package:devinci/pages/ui/user.dart';
+import 'package:f_logs/f_logs.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_statusbarcolor/flutter_statusbarcolor.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
 import 'package:devinci/extra/globals.dart' as globals;
-import 'package:easy_localization/easy_localization.dart';
+// import 'package:easy_localization/easy_localization.dart';
+import 'package:get/get.dart';
 
 class MainPage extends StatefulWidget {
   MainPage({Key key}) : super(key: key);
@@ -23,7 +25,7 @@ class MainPage extends StatefulWidget {
 }
 
 class MainPageState extends State<MainPage> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  //final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   var title = globals.user.data['name'];
 
   @override
@@ -54,25 +56,25 @@ class MainPageState extends State<MainPage> {
       BottomNavigationBarItem(
         icon: Icon(
             globals.selectedPage == 0 ? Icons.today : Icons.today_outlined),
-        label: 'time_schedule'.tr(),
+        label: 'time_schedule'.tr,
       ),
       BottomNavigationBarItem(
         icon: Icon(globals.selectedPage == 1
             ? Icons.assignment
             : Icons.assignment_outlined),
-        label: 'grades'.tr(),
+        label: 'grades'.tr,
       ),
       BottomNavigationBarItem(
         icon: Icon(globals.selectedPage == 2
             ? Icons.watch_later
             : Icons.watch_later_outlined),
-        label: 'absences'.tr(),
+        label: 'absences'.tr,
       ),
       BottomNavigationBarItem(
         icon: Icon(globals.selectedPage == 3
             ? DevinciIcons.megaphone_filled
             : DevinciIcons.megaphone_outlined),
-        label: 'attendance'.tr(),
+        label: 'attendance'.tr,
       ),
       BottomNavigationBarItem(
         icon: Icon(
@@ -111,7 +113,7 @@ class MainPageState extends State<MainPage> {
     return WillPopScope(
       onWillPop: () async => false,
       child: Scaffold(
-        key: _scaffoldKey,
+        key: globals.mainScaffoldKey,
         appBar: AppBar(
             elevation: 0.0,
             brightness: MediaQuery.of(context).platformBrightness,
@@ -239,7 +241,7 @@ class MainPageState extends State<MainPage> {
                         ],
                       )
                     : PopupMenuButton(
-                        captureInheritedThemes: true,
+                        //captureInheritedThemes: true,
                         icon: IconTheme(
                           data: Theme.of(context).accentIconTheme,
                           child: Icon(Icons.more_vert_outlined),
@@ -282,7 +284,7 @@ class MainPageState extends State<MainPage> {
                           ].map((String choice) {
                             return PopupMenuItem<String>(
                               value: choice,
-                              child: Text(choice).tr(),
+                              child: Text(choice.tr),
                             );
                           }).toList();
                         },
@@ -314,13 +316,18 @@ class MainPageState extends State<MainPage> {
                     child: Icon(Icons.offline_bolt),
                   ),
                   onPressed: () {
-                    final snackBar =
-                        SnackBar(content: Text('offline_msg').tr());
-
-                    try {
-                      Scaffold.of(globals.getScaffold()).showSnackBar(snackBar);
-                      // ignore: empty_catches
-                    } catch (e) {}
+                    Get.snackbar(
+                      null,
+                      'offline_msg'.tr,
+                      duration: const Duration(seconds: 6),
+                      snackPosition: SnackPosition.BOTTOM,
+                      borderRadius: 0,
+                      margin: EdgeInsets.only(
+                          left: 8,
+                          right: 8,
+                          top: 0,
+                          bottom: globals.bottomPadding),
+                    );
                   },
                 ),
             ],
@@ -346,26 +353,22 @@ class MainPageState extends State<MainPage> {
                         : Theme.of(context).primaryColor.withAlpha(35))
                     : Colors.transparent,
                 shape: SquircleBorder(
-                  radius: 25.0,
+                  radius: BorderRadius.all(Radius.circular(25)),
                 ),
                 child: ListTile(
                   shape: SquircleBorder(
-                    radius: 25.0,
+                    radius: BorderRadius.all(Radius.circular(25)),
                   ),
                   leading: Icon(
                       globals.selectedPage == index ? selectedIcon : icon,
                       color: globals.selectedPage == index
                           ? Theme.of(context).accentColor
                           : Theme.of(context).textTheme.bodyText1.color),
-                  title: Text(title,
-                          style: TextStyle(
-                              color: globals.selectedPage == index
-                                  ? Theme.of(context).accentColor
-                                  : Theme.of(context)
-                                      .textTheme
-                                      .bodyText1
-                                      .color))
-                      .tr(),
+                  title: Text(title.tr,
+                      style: TextStyle(
+                          color: globals.selectedPage == index
+                              ? Theme.of(context).accentColor
+                              : Theme.of(context).textTheme.bodyText1.color)),
                   selected: globals.selectedPage == index,
                   onTap: callback,
                 ),
@@ -477,8 +480,10 @@ class MainPageState extends State<MainPage> {
         }),
         bottomNavigationBar: LayoutBuilder(builder: (context, constraints) {
           if (constraints.maxWidth > 1000) {
+            globals.bottomPadding = 0;
             return SizedBox.shrink();
           } else {
+            globals.bottomPadding = 64;
             return Theme(
               data: Theme.of(context).copyWith(
                 // sets the background color of the `BottomNavigationBar`
